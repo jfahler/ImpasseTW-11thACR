@@ -1,0 +1,558 @@
+#include "\a3\ui_f\hpp\definecommongrids.inc"
+//#include "\a3\ui_f\hpp\defineResincl.inc" // added by factions and can't be added twice it seems
+#include "scripts\Factions\display.hpp"
+#include "scripts\Dlcs\display.hpp"
+#include "defines_gui.hpp"
+#include "dialogs.hpp"
+
+author = "SkullTT";
+onLoadName = "Impasse Total War";
+briefingName = "Impasse Total War";
+onLoadMission = "Full map, persistent war as players push to capture the entire map";
+overviewText = "Randomly generated missions. Push the enemy back from key locations.";
+loadScreen = "images\splash.jpg";
+overViewPicture = "images\splash.jpg";
+overViewPictureLocked="images\splash.jpg";
+
+class Header
+{
+	gameType =  Coop; // Game type
+	minPlayers = 1;	  // minimum number of players the mission supports
+	maxPlayers = 8;	  // maximum number of players the mission supports
+};
+
+joinUnassigned = 0; // auto assign to slot in mission lobby
+enableDebugConsole = 1;
+allowFunctionsLog = 0;
+
+showGPS=1;
+saving = 0;
+disabledAI = 1;
+briefing = 0;
+skipLobby = 0;
+
+ReviveMode = 1;                         //0: disabled, 1: enabled, 2: controlled by player attributes
+ReviveUnconsciousStateMode = 0;         //0: basic, 1: advanced, 2: realistic
+ReviveRequiredTrait = 0;                //0: none, 1: medic trait is required
+ReviveRequiredItems = 2;                //0: none, 1: medkit, 2: medkit or first aid kit
+ReviveRequiredItemsFakConsumed = 1;     //0: first aid kit is not consumed upon revive, 1: first aid kit is consumed
+ReviveDelay = 15;                       //time needed to revive someone (in secs)
+ReviveMedicSpeedMultiplier = 2;         //speed multiplier for revive performed by medic
+ReviveForceRespawnDelay = 4;            //time needed to perform force respawn (in secs)
+ReviveBleedOutDelay = 1200;             //unconscious state duration (in secs)
+minPlayerDistance = 500;                //distance between player and wreck or corpse cleanup
+
+corpseManagerMode = 2;
+corpseLimit = 15;
+corpseRemovalMinTime = 600;
+corpseRemovalMaxTime = 3600;
+
+respawn = 3;
+respawnButton = 1;
+respawnDelay = 3;
+respawnDialog = 0;
+respawnOnStart = -1;
+respawnTemplates[] = { "Base" };
+
+class Params
+{    
+	class Spacer0
+	{
+		title = "The values that end with an * are the default values for the game.  Check the in game briefing for details on the parameters.";
+		values[] = {0};
+		texts[] = {""};
+		default = 0;
+	};		
+	class NewGame
+	{
+		title = "Force a new game";
+		values[] = {0, 1};
+		texts[] = {"No, use save game if available*","Force a new game"};
+		default = 0;
+	};	  	
+	class Spacer1
+	{
+		title = "---------- Objectives ----------";
+		values[] = {0};
+		texts[] = {"----------"};
+		default = 0;
+	};
+	class ObjectiveCount
+	{
+		title = "How many objectives on the map";
+		values[] = {1,2,4,6,10,16,18,0}; // is a ratio (divide by 10)
+		texts[] = {"Very Few","Few","Less","Some","Average*","Lots","Too Many","Let me choose the locations"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamObjectiveCount",10]);
+	};		
+	class ObjectivesPerZone
+	{
+		title = "How many objectives are in each zone";
+		values[] = {1,2,3,4,5,6};
+		texts[] = {"1","2","3*","4","5","6"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamObjectivesPerZone",3]);
+	};	
+	class ObjectiveSize
+	{
+		title = "How large are the objectives";
+		values[] = {100,150,200,250,400,500,750};
+		texts[] = {"200m","300m","400m*","500m","800m","1000m","1500m"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamObjectiveSize",200]);
+	};	
+	class ObjectiveCaptureSpeed
+	{
+		title = "How fast are the objectives captured";
+		values[] = {1,2,3,5,8};
+		texts[] = {"very slow","slow","medium*","fast","very fast"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamObjectiveCaptureSpeed",3]);
+	}; 		
+	class ObjectivesVisible3D
+	{
+		title = "Should the objectives be visible in 3D or only on the map";
+		values[] = {0,1};
+		texts[] = {"Only on the map","On the map and in the 3D environment*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamObjectivesVisible3D",1]);
+	}; 		
+	class ExtraBuildings
+	{
+		title = "Add extra buildings to objective zones with very few buildings already there";
+		values[] = {0,1};
+		texts[] = {"No, fight without cover","Yes, have add a few buildings if necessary*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamExtraBuildings",1]);
+	};		
+	class EnemyAiCnt
+	{
+		title = "Approximate number of infantry on each side";
+		values[] = {30,40,50,60,70,80,100,150};
+		texts[] = {"30","40","50*","60","70","80","100","150"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamEnemyAiCnt",50]);
+	};				
+	class ExtraLaunchers
+	{
+		title = "Should ai carry more launchers (AA/AT)";
+		values[] = {0,1,2};
+		texts[] = {"No - number of missile specialists is set by faction","Yes - a few*","Yes - a lot"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamExtraLaunchers",1]);
+	};					
+	class Mines
+	{
+		title = "Should there be mines near the objectives";
+		values[] = {0,1,2,3};
+		texts[] = {"No","Yes, occasionally*","Yes, often","Yes, everywhere"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamMines",1]);
+	};					
+	class Artillery
+	{
+		title = "Should there be artillery strikes near the objectives";
+		values[] = {0,3,5,10,15,20,25};
+		texts[] = {"No","Constant: every 3 minutes or so","Nearly constant: around 5 minutes","Often: 10 min*","Intermittent: 15 minutes","Sporadic: 20 minutes","Occasional: 25 minutes"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamArtillery",10]);
+	};					
+	class Statics
+	{
+		title = "Add static weapons around the objectives (if the enemy faction has them available)";
+		values[] = {0,1,2,3,-1,-2,-3};
+		texts[] = {"No","Yes, add a few*","Yes, add more","Yes, add a lot","Yes, add a few, but no mortars","Yes, add more, but no mortars","Yes, add a lot, but no mortars"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamStatics",1]);
+	};		
+	class Garrison
+	{
+		title = "Should units garrison in buildings in objectives they own";
+		values[] = {0,1,2};
+		texts[] = {"No","Yes, a little*","Yes, a lot"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamGarrison",1]);
+	};
+	class Spacer2
+	{
+		title = "---------- Vehicles ----------";
+		values[] = {0};
+		texts[] = {"----------"};
+		default = 0;
+	};
+	class Vehicles
+	{
+		title = "Vehicles Used By AI";
+		values[] = {0, 1, 2, 3};
+		texts[] = {"All","Side only","Choosen DLC/Mods side only","Faction only*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVehicles",3]);
+	};	
+	class VehicleChooser
+	{
+		title = "Choose specific vehicles for the ai using the garage interface (requires new game, can override 'Vehicles Used By AI')";
+		values[] = {0, 1, 2, 3};
+		texts[] = {"No, choose randomly*","Choose enemy vehicles (player vehicles chosen randomly)","Choose player vehicles (enemy vehicles chosen randomly)","Choose both player and enemy vehicles using the garage interface"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVehicleChooser",0]);
+	};
+	class VehicleEscalation
+	{
+		title = "AI vehicle escalation as zones are captured";
+		values[] = {1,2,0};
+		texts[] = {"Yes: ai vehicles unlock as mission progresses (friendly and enemy)","Yes: ai vehicle unlock depending on territory owned (friendly start weaker than enemy)","No - all vehicles are available to the ai at the start*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVehicleEscalation",0]);
+	};
+	class VehicleSideAdjustment
+	{
+		title = "Number of friendly vehicles compared to the enemy";
+		values[] = {1,4,7,10,13,16,19};
+		texts[] = {"Much less (harder)","Less","Slightly less","Balanced*","Slightly more","More","Much more (easier)"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVehicleSideAdjustment",10]);
+	};
+	class VehicleSpawnAdjustment
+	{
+		title = "Adjust amount of ALL vehicles (combines with options below)";
+		values[] = {2,4,7,10,13,16};
+		texts[] = {"Very few","Much less","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVehicleSpawnAdjustment",10]);
+	};	
+	class AttackPlaneSpawnAdjustment
+	{
+		title = "Adjust amount of attack PLANES";
+		values[] = {-1,0,5,10,20,30};
+		texts[] = {"None, and no transport airplanes either","None","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAttackPlaneSpawnAdjustment",10]);
+	};		
+	class AttackHeliSpawnAdjustment
+	{
+		title = "Adjust amount of attack HELICOPTERS";
+		values[] = {-1,0,5,10,20,30};
+		texts[] = {"None, and no transport helicopters either","None","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAttackHeliSpawnAdjustment",10]);
+	};	
+	class AttackTankSpawnAdjustment
+	{
+		title = "Adjust amount of attack TANKS";
+		values[] = {-1,0,5,10,20,30};
+		texts[] = {"None, and no transport tanks either","None","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAttackTankSpawnAdjustment",10]);
+	};			
+	class AttackApcSpawnAdjustment
+	{
+		title = "Adjust amount of attack APCS";
+		values[] = {-1,0,5,10,20,30};
+		texts[] = {"None, and no transport apcs either","None","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAttackApcSpawnAdjustment",10]);
+	};			
+	class AttackCarSpawnAdjustment
+	{
+		title = "Adjust amount of attack TRUCKS/CARS";
+		values[] = {-1,0,5,10,20,30};
+		texts[] = {"None, and no miliary transport cars either (Civ cars are allowed)","None","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAttackCarSpawnAdjustment",10]);
+	};			
+	class AttackShipSpawnAdjustment
+	{
+		title = "Adjust amount of attack SHIPS";
+		values[] = {-1,0,5,10,20,30};
+		texts[] = {"None, and no transport ships either","None","Less","Normal*","More","Much more"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAttackShipSpawnAdjustment",10]);
+	};			
+	class AirDropVehicles
+	{
+		title = "Can vehicles be air dropped if no land routes found";
+		values[] = {0,1};
+		texts[] = {"No","Yes*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAirDropVehicles",1]);
+	};			
+	class AirplaneWithoutAirport
+	{
+		title = "Can airplanes spawn even if side hasn't captured an airport";
+		values[] = {0,1};
+		texts[] = {"No*","Yes"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAirplaneWithoutAirport",0]);
+	};			
+	class DespawnTransports
+	{
+		title = "Should transport land/sea vehicles immediately despawn after unloading soldiers";
+		values[] = {0,1};
+		texts[] = {"No, travel back to base to despawn*","Yes, vehicles will despawn right after unload"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamDespawnTransports",0]);
+	};	
+	class Spacer3
+	{
+		title = "---------- Friendly ----------";
+		values[] = {0};
+		texts[] = {"----------"};
+		default = 0;
+	};	
+	class FriendlyAiCntAdjustment
+	{
+		title = "Number of friendly soldiers compared to the enemy";
+		values[] = {-4,-3,-2,-1,0,1,2,3};
+		texts[] = {"Hardly any (harder)","Much less","Less","Slightly less","Balanced*","Slightly more","More","Much more (easier)"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamFriendlyAiCntAdjustment",0]);
+	};
+	class FriendlySquadSkill
+	{
+		title = "Skill of friendly AI squads";
+		values[] = {4,6,8,10,0};
+		texts[] = {"Beginner","Competent*","Skilled","Expert","Use server settings"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamFriendlySquadSkill",6]);
+	};		
+	class FriendlySquadSize
+	{
+		title = "Max number of AI that can be added to player squads";
+		values[] = {4,6,8,10,12,9999};
+		texts[] = {"4","6","8*","10","12","unlimited"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamFriendlySquadSize",8]);
+	};		
+	class FriendlyRevive
+	{
+		title = "Friendly Revive Available";
+		values[] = {1, 0, -1};
+		texts[] = {"Yes, friendly units will revive the players, AI teammates can be revived.*","No, I use an ai revive mod","No, I don't want any revive, just respawn right away"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamFriendlyRevive",1]);
+	};	
+	class FriendlySquadDelivery
+	{
+		title = "Should some friendly AI squads wait at base for players to deliver them";
+		values[] = {0,1,2,3,4,5};
+		texts[] = {"No*","Yes, one squad","Yes, two squads","Yes, three squads","Yes, four squads","Yes, five squads"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamFriendlySquadDelivery",0]);
+	};		
+	class PlayerArtillery
+	{
+		title = "Support: Player called artillery";
+		values[] = {0,60,120,300,600,900,1200};
+		texts[] = {"None","Available every 1 min","Available every 2 min","Available every 5 min*","Available every 10 min","Available every 15 min","Available every 20 min"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamPlayerArtillery",300]);
+	};		
+	class PlayerCAS
+	{
+		title = "Support: Player called close air support";
+		values[] = {0,300,600,900,1200,1800,2700};
+		texts[] = {"None","Available every 5 min","Available every 10 min","Available every 15 min","Available every 20 min*","Available every 30 min","Available every 45 min"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamPlayerCAS",1200]);
+	};		
+	class Spacer4
+	{
+		title = "---------- Enemy ----------";
+		values[] = {0};
+		texts[] = {"----------"};
+		default = 0;
+	};		
+	class Difficulty
+	{
+		title = "Enemy Difficulty";
+		values[] = {4, 6, 8, 10, 0};
+		texts[] = {"Casual","Easy*","Standard","Hard","Use server settings"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamDifficulty",6]);
+	};
+	class ShowEnemyOnMap
+	{
+		title = "If showing groups is on, show enemy as well as friendly";
+		values[] = {1, 0};
+		texts[] = {"Yes, show both friendly and known enemy group icons*","No, only show friendly group icons"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamShowEnemyOnMap",1]);
+	};		
+	class Spacer5
+	{
+		title = "---------- Miscellaneous ----------";
+		values[] = {0};
+		texts[] = {"----------"};
+		default = 0;
+	};	
+	class FastTravel
+	{
+		title = "What kind of fast travel is allowed";
+		values[] = {0, 1, 2};
+		texts[] = {"Only between bases or from captured flags to bases","As above plus: to captured flags","All above plus: paradrop near non-captured flags*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamFastTravel",2]);
+	};
+	class ObjectivesFlagGui
+	{
+		title = "Should the capture status be shown on the UI";
+		values[] = {0,1,2};
+		texts[] = {"No.  It will only show on the flag poles.","Yes, show on the screen as well as the flag poles. Show on Right.*","Yes, show on the screen as well as the flag poles. Show on Left."};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamObjectivesFlagGui",1]);
+	}; 		
+	class RedOut
+	{
+		title = "Entering enemy zones causes red screen after how long";
+		values[] = {0,30,60,90,9999};
+		texts[] = {"Immediately","30 seconds*","60 seconds","90 seconds","Never"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamRedOut",30]);
+	}; 		
+	class Civilians
+	{
+		title = "Civilian presence";
+		values[] = {0,1,2,3};
+		texts[] = {"No*","Yes, have FEW civilians in the AO","Yes, have MORE civilians in the AO","Yes, have LOTS of civilians in the AO"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamCivilians",0]);
+	};
+	class VirtualArsenal
+	{
+		title = "Virtual Arsenal";
+		values[] = {0, 1, 2};
+		texts[] = {"Full","Map/DLC specific (on dlc maps, only allows weapons from the dlc)","Faction specific*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVirtualArsenal",2]);
+	};	
+	class AceArsenal
+	{
+		title = "Use ACE Arsenal (if available)";
+		values[] = {0, 1};
+		texts[] = {"No","Yes*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAceArsenal",1]);
+	};
+	class VirtualGarage
+	{
+		title = "Virtual Garage";
+		values[] = {0, 1, 2};
+		texts[] = {"No","Yes, limited by 'vehicles used by ai' parameter*","Yes, all vehicles"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamVirtualGarage",1]);
+	};	
+	class HeadlessClient
+	{
+		title = "Headless Client";
+		values[] = {1,0};
+		texts[] = {"Enable","Disable*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamHeadlessClient",0]);
+	};	
+	class Identity
+	{
+		title = "Should player's face/voice match the faction or use player's default";
+		values[] = {0, 1};
+		texts[] = {"Use player default","Match the chosen faction*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamIdentity",1]);
+	};	
+	class RadioVolume
+	{
+		title = "Volume of squad mate radio chatter";
+		values[] = {0, 8, 11, 15, 20};
+		texts[] = {"Off","25%","50%*","75%","Full"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamRadioVolume",11]);
+	};	
+	class AggressiveCleanup
+	{
+		title = "Dead unit cleanup";
+		values[] = {-10,0,1};
+		texts[] = {"None, don't clean up units, I like to watch the game as zeus","Normal*","Aggresive, to improve performance delete dead units even when players are nearby"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamAggressiveCleanup",0]);
+	};
+    class ForceNVGs
+	{
+		title = "Enable NVGs even on maps that don't have them";
+		values[] = {0,1};
+		texts[] = {"No*","Yes"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamForceNVGs",0]);
+	};
+	class TimeOfDay
+	{
+		title = "Time of Day";
+		values[] = {0, 1, 2, 3, 4, 5};
+		texts[] = {"Random*","Random Daytime","Dawn","Day time","Dusk","Night time"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamTimeOfDay",0]);
+	};		
+	class Weather
+	{
+		title = "Weather";
+		values[] = {0, 1, 2, 3};
+		texts[] = {"Random*","Fair","Moderate","Bad"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamWeather",0]);
+	};	
+    class TimeMultiplier
+    {
+        title="Time Multiplier";
+        values[]={1, 6, 12, 24};
+        texts[]={"1:1 (Normal)*","1:6 (Day = 4 Hours)","1:12 (Day = 2 Hours)","1:24 (Day = 1 Hour)"};
+        default = __EVAL(profileNamespace getVariable ["ITW_ParamTimeMultiplier",1]);
+    };	  	
+	class ViewDistance
+	{
+		title = "View Distance";
+		values[] = {0,1500,2000,2500,3000,3500,4000,4500,5000,6000,7000,8000,9000,10000};
+		texts[] = {"Each client uses their own as defined in Options>Display","1500","2000","2500","3000","3500","4000","4500","5000","6000*","7000","8000","9000","10000"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamViewDistance",6000]);
+	};		
+	class Stamina
+	{
+		title = "Stamina";
+		values[] = {0, 1, 2};
+		texts[] = {"Disable","Enable","User server/host setting*"};
+		default = __EVAL(profileNamespace getVariable ["ITW_ParamStamina",2]);
+	};		
+};
+
+class CfgDebriefing
+{
+	// Used when ParamReset option choosen
+	class endParamReset
+	{
+		title = "Mission Parameters Reset";
+		description = "The mission parameters have been reset back to the defaults";
+		picture = "\a3\ui_f\data\GUI\Cfg\Hints\Rules_ca.paa";
+	};
+};
+
+class CfgFunctions
+{
+	class Impasse_TW
+	{
+        class ImpasseTW
+        {
+            class preInit
+            {
+                file = "preInit.sqf";
+                preInit = 1;
+            };
+        };
+    };
+};
+
+import RscDisplayGarage;
+class RscDisplayGarageSKL: RscDisplayGarage
+{
+	onLoad="[""onLoad"",_this,""RscDisplayGarageSKL"",'GUI'] call BIS_fnc_initDisplay";
+};
+
+class CfgCommunicationMenu
+{
+	class lifeSignScan
+	{
+		text = "Scan objective for life signs";		// Text displayed in the menu and in a notification
+		submenu = ""; // Submenu opened upon activation (expression is ignored when submenu is not empty.)
+		expression = "_this spawn ITW_RadioLifeSignScan";	// Code executed upon activation
+		icon = ""; // "images\HeliArrive.paa";				// Icon displayed permanently next to the command menu
+		cursor = "\a3\Ui_f\data\IGUI\Cfg\Cursors\weapon_ca.paa";				// Custom cursor displayed when the item is selected
+		enable = "1";					// Simple expression condition for enabling the item
+		removeAfterExpressionCall = 0;	// 1 to remove the item after calling
+	};
+	class showFriendlies
+	{
+		text = "Show/Hide group icons on map";		// Text displayed in the menu and in a notification
+		submenu = "#USER:ITW_SF_SubMenu"; // Submenu opened upon activation (expression is ignored when submenu is not empty.)
+		expression = "";	// Code executed upon activation
+		icon = ""; // "\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\call_ca.paa";				// Icon displayed permanently next to the command menu
+		cursor = "\a3\Ui_f\data\IGUI\Cfg\Cursors\weapon_ca.paa";				// Custom cursor displayed when the item is selected
+		enable = "1";					// Simple expression condition for enabling the item
+		removeAfterExpressionCall = 0;	// 1 to remove the item after calling
+	};
+	class supports
+	{
+		text = "Supports...";		// Text displayed in the menu and in a notification
+		submenu = ""; // Submenu opened upon activation (expression is ignored when submenu is not empty.)
+		expression = "['SUPPORT'] spawn ITW_RadioCommsMenu";	// Code executed upon activation
+		icon = ""; // "images\HeliArrive.paa";				// Icon displayed permanently next to the command menu
+		cursor = "\a3\Ui_f\data\IGUI\Cfg\Cursors\weapon_ca.paa";				// Custom cursor displayed when the item is selected
+		enable = "1";					// Simple expression condition for enabling the item
+		removeAfterExpressionCall = 0;	// 1 to remove the item after calling
+	};	
+	class transports
+	{
+		text = "Transports...";		// Text displayed in the menu and in a notification
+		submenu = ""; // Submenu opened upon activation (expression is ignored when submenu is not empty.)
+		expression = "['TRANSPORT'] spawn ITW_RadioCommsMenu";	// Code executed upon activation
+		icon = ""; // "images\quaddrop.paa";				// Icon displayed permanently next to the command menu
+		cursor = "\a3\Ui_f\data\IGUI\Cfg\Cursors\iconCursorSupport_ca.paa";				// Custom cursor displayed when the item is selected
+		enable = "1";					// Simple expression condition for enabling the item
+		removeAfterExpressionCall = 0;	// 1 to remove the item after calling
+	};
+	class commander
+	{
+		text = "Commander...";		// Text displayed in the menu and in a notification
+		submenu = "#USER:ITW_RadioCommanderMenu"; // Submenu opened upon activation (expression is ignored when submenu is not empty.)
+		expression = "";	// Code executed upon activation
+		icon = ""; // "\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\supplydrop_ca.paa";				// Icon displayed permanently next to the command menu
+		cursor = "\a3\Ui_f\data\IGUI\Cfg\Cursors\iconCursorSupport_ca.paa";				// Custom cursor displayed when the item is selected
+		enable = "1";					// Simple expression condition for enabling the item
+		removeAfterExpressionCall = 0;	// 1 to remove the item after calling
+	};
+};
