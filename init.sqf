@@ -1,40 +1,57 @@
+/*
+    ITW Cold War Init
+    Runs cleanup and initializes all core scripts safely.
+*/
+
 diag_log "ITW: init start";
 
-if (!isDedicated) then { waitUntil { player == player }; };
+// Wait for player identity to exist on clients
+if (!isDedicated) then { waitUntil { !isNull player && player == player }; };
 if ((!isServer) && (player != player)) then { waitUntil { player == player }; };
-waitUntil { !isNil "ITW_PreInitComplete" }; // wait for the server to catch up
 
-// Run cleanup script on server only
+// Wait for pre-init to finish
+waitUntil { !isNil "ITW_PreInitComplete" };
+
+// Run mission params setup
+execVM "params.sqf";
+
+// Stop headless clients here
+if (!isServer && !hasInterface) exitWith {};
+
+// Wait for core mission params to initialize
+waitUntil { !isNil "ITW_Params_complete" };
+waitUntil { !isNil "ITW_ParamRadioVolume" };
+waitUntil { !isNil "ITW_ParamStamina" };
+
+// Adjust radio volume on clients
+if (hasInterface) then {
+    0 fadeRadio (ITW_ParamRadioVolume / 10);
+    if (ITW_ParamStamina < 2) then {
+        player enableStamina (ITW_ParamStamina == 1);
+    };
+};
+
+// Reset player rating if needed
+execVM "scripts\SKULL\SKL_RatingMinimum.sqf";
+
+// Setup headless client handler if enabled
+waitUntil { !isNil "ITW_ParamHeadlessClient" };
+if (isServer && ITW_ParamHeadlessClient == 1) then {
+    HeadlessClients = [];
+    execVM "scripts\SKULL\SKL_HeadlessClient.sqf";
+};
+
+// Run cold war cleanup on server only
 if (isServer) then {
     [] execVM "ITW_Cleanup.sqf";
 };
 
-execVM "params.sqf";
-
-if (!isServer && !hasInterface) exitWith {}; // headless clients don't need to proceed any further
-
-waitUntil { !isNil "ITW_Params_complete" };
-waitUntil { !isNil "ITW_ParamRadioVolume" };
-0 fadeRadio ITW_ParamRadioVolume / 10;
-
-waitUntil { !isNil "ITW_ParamStamina" };
-if (hasInterface && { ITW_ParamStamina < 2 }) then {
-    player enableStamina (ITW_ParamStamina == 1);
-};
-
-execVM "scripts\SKULL\SKL_RatingMinimum.sqf"; // Reset player rating if it gets too low
-
-waitUntil { !isNil "ITW_ParamHeadlessClient" };
-HeadlessClients = []; 
-if (isServer && ITW_ParamHeadlessClient == 1) then {
-    execVM "scripts\SKULL\SKL_HeadlessClient.sqf";
-};
-
-// Change arsenal camera
+// Improve arsenal view
 if (isNil "BIS_fnc_arsenal_campos_0") then {
     BIS_fnc_arsenal_campos_0 = [4,159,16.6,[0,0,0.85]];
 };
 
+// Start the main ITW script
 [] execVM "ITW_Start.sqf";
 
-diag_lo_
+diag_log "ITW: init complete";

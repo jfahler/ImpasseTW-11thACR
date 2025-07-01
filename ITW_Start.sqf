@@ -16,8 +16,7 @@ ITW_PlayerFaction = [
   "US85_mcM16",
   "US85_mcM16GL",
   "US85_mcM136",
-  "US85_mcM47",
-  
+  "US85_mcM47"
 ];
 ITW_EnemyFaction  = ["CWR_VDV", "CUP_O_SLA"];
 ITW_CivFaction    = ["CIV_F"];
