@@ -2,6 +2,28 @@
 
 diag_log "ITW: Start";
 
+ITW_PlayerFaction = [
+  "CWR_B_US85_SquadLeader",
+  "CWR_B_US85_TeamLeader",
+  "CWR_B_US85_Rifleman",
+  "CWR_B_US85_Grenadier",
+  "CWR_B_US85_MachineGunner",
+  "CWR_B_US85_Engineer",
+  "CWR_B_US85_AT",
+  "CWR_B_US85_AA",
+  "CWR_B_US85_Marksman",
+  "CWR_B_US85_Medic", 
+  "US85_mcM16",
+  "US85_mcM16GL",
+  "US85_mcM136",
+  "US85_mcM47",
+  
+];
+ITW_EnemyFaction  = ["CWR_VDV", "CUP_O_SLA"];
+ITW_CivFaction    = ["CIV_F"];
+ITW_ParamNewGame  = 0;
+
+
 LV_PAUSE = false;
 if (hasInterface) then {cutText ["Choosing faction...", "BLACK OUT", 0.001];};
 
