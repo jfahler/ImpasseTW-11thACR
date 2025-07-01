@@ -1,1 +1,1 @@
-<img src="splash/splash.jpg"> 
+<img src="images/splash.jpg"> 
