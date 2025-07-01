@@ -41,10 +41,11 @@ if (isServer && ITW_ParamHeadlessClient == 1) then {
     execVM "scripts\SKULL\SKL_HeadlessClient.sqf";
 };
 
+// Deprecated in favor of slaving away in 3den - bullet magnet
 // Run cold war cleanup on server only
-if (isServer) then {
-    [] execVM "ITW_Cleanup.sqf";
-};
+// if (isServer) then {
+//     [] execVM "ITW_Cleanup.sqf";
+// };
 
 // Improve arsenal view
 if (isNil "BIS_fnc_arsenal_campos_0") then {
