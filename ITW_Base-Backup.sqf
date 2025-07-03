@@ -446,12 +446,10 @@ ITW_BasePlace = {
     
     // _vehData: [_type, _relPos, _dir, _groupId]
     private _vaData = [
-          ["cwr3_closet_green",[23395,18346.6,0],[],0,"CAN_COLLIDE"];
-          ["cwr3_metal_locker",[23395.1,18348,0],[],0,"CAN_COLLIDE"];
-//        ['Land_OfficeCabinet_02_F', [33.667,-26.9141,0.000696182], 91.1549, _nullGroup],
-//        ['Land_OfficeCabinet_02_F', [33.6509,-27.9619,0.000686646], 91.1527, _nullGroup],
-//        ['Land_OfficeCabinet_02_F', [33.6416,-29.0137,0.000652313], 91.152, _nullGroup],
-//        ['Land_OfficeCabinet_02_F', [33.6279,-30.0439,0.000656128], 91.1516, _nullGroup]
+        ['Land_OfficeCabinet_02_F', [33.667,-26.9141,0.000696182], 91.1549, _nullGroup],
+        ['Land_OfficeCabinet_02_F', [33.6509,-27.9619,0.000686646], 91.1527, _nullGroup],
+        ['Land_OfficeCabinet_02_F', [33.6416,-29.0137,0.000652313], 91.152, _nullGroup],
+        ['Land_OfficeCabinet_02_F', [33.6279,-30.0439,0.000656128], 91.1516, _nullGroup]
     ];
     private _lampData = [
         ['Land_LampStreet_02_F', [78.2095,10.8408,0.938072], 0, _nullGroup],
@@ -638,131 +636,122 @@ ITW_BasePlace = {
         [_baseInfo#0,_baseInfo#1,false] call ITW_BasePlaceGarage;
     };
     _baseInfo pushBack _garagePos; // ITW_BASE_GARAGE_POS
-
-
-// Dynamically set center and rotation from a placed object in 3DEN
-private _center = getPosATL base_center;
-private _angle = getDir base_center;
-
-// Load your 3DEN-based template from Base_Template.sqf
-_baseInfo = [_center, _angle] call compile preprocessFileLineNumbers "Base_Template.sqf";
-
-
+   
     //// Rest of base ////
     // aresnals
-//    private _va = [];
-//   {
-//        _x params ['_type','_relPos','_dir','_groupId'];
-//        _pos = [_relPos,_center,_angle] call _rotatePos;
-//        _veh = _type createVehicle _spawnPt;
-//        _veh setDir (_dir - _angle);
-//        _veh setPosATL _pos;
-//        _va pushBack _veh;
-//        _veh enableSimulationGlobal false;
-//    } count _vaData;
-//    [_va] remoteExec ["CustomArsenal_AddVAs",0,true];
-//    [_va] remoteExec ["ITW_BaseVaActions",0,true];
-//    // lamps
-//    {
-//        _x params ['_type','_relPos','_dir','_groupId'];
-//        _pos = [_relPos,_center,_angle] call _rotatePos;
-//        _veh = _type createVehicle _spawnPt;
-//        _veh allowDamage false;
-//        _veh setDir (_dir - _angle);
-//        _veh setPosATL _pos;
-//    } count _lampData;
-//    // repair pt
-//    {
-//        _x params ['_type','_relPos','_dir','_groupId'];
-//        _pos = [_relPos,_center,_angle] call _rotatePos;
-//        _elevation = [_pos,_dir - _angle] call ITW_BasePlatformWide;
-//        _pos set [2,_elevation];
-//        _veh = [_pos,"square",_dir - _angle] call ITW_fnc_HelipadObject;
-//        [_pos,25] call ITW_vehRepairPoint;
-//        false
-//    } count _repairPtData;
-//    _baseInfo pushBack _pos; // ITW_BASE_REPAIR_PT
-//    // objects
-//    {
-//       _x params ['_type','_relPos','_dir','_groupId'];
-//        _pos = [_relPos,_center,_angle] call _rotatePos;
-//        [_type,_pos,_dir - _angle] call ITW_BaseSimpleObject;
-//        false
-//    } count _objectData;
-//    // vehicles
-//    _vehSpawnInfo = [];
-//    {
-//        _x params ['_type','_relPos','_dir','_groupId'];
-//        _pos = [_relPos,_center,_angle] call _rotatePos;
-//        _dir = _dir - _angle;
-//        private _typeStr = if (typeName _type isEqualTo "ARRAY") then {_type#0} else {_type};
-//        if (_typeStr isKindOf "Air") then {
-//            _elevation = [_pos,_dir] call ITW_BasePlatform;
-//            _pos set [2,_elevation];
-//            _dir = [[sin _dir, cos _dir, 0], [0,0,1]];
-//        };      
-//        _vehSpawnInfo pushBack [_type,_pos,_dir,1,true];
-//        false
-//    } count _vehData;
-//    // men
-//    {
-//        _x params ['_type','_relPos','_dir','_groupId'];
-//        private _pos = [_relPos,_center,_angle] call _rotatePos;
-//        BASE_UNIT = nil;
-//        _type createUnit [_pos, _groupId, "BASE_UNIT = this"];
-//        waitUntil {!isNil "BASE_UNIT"};
-//        private _unit = BASE_UNIT;
-//        BASE_UNIT = nil;
-//        _unit setFormDir (_dir - _angle);
-//        _unit setDir (_dir - _angle);
-//        _unit setPosATL _pos;
-//        _unit doMove _pos;
-//        _cobj = _cobj + [_unit];
-//    } count _menData;
-//
-//    {
-//        _x params ['_groupid','_wpArray'];
-//        if (count _wpArray > 1) then {
-//            {
-//                _x params ['_relPos', '_completeR', '_behavior', '_combatMode', '_formation', '_speed', '_wpType', '_timeout'];
-//                private _pos = [_relPos,_center,_angle] call _rotatePos;
-//                private _idx = _groupid addWaypoint [_pos,_completeR];
-//                _idx setWaypointBehaviour _behavior;
-//                _idx setWaypointCombatMode _combatMode;
-//                _idx setWaypointFormation _formation;
-//                _idx setWaypointSpeed _speed;
-//                _idx setWaypointType _wpType;
-//                _idx setWaypointTimeout _timeout;
-//            } count _wpArray;
-//        } else {
-//            {doStop _x} count units _groupId;
-//        };
-//        _groups pushBack _groupid;
-//        false
-//    } count _wayPointData;
-//    // markers
-//    {
-//        _x params ['_name', '_relPos', '_brush', '_color', '_dir', '_shape', '_size', '_type', '_alpha'];
-//        private _pos = [_relPos,_center,_angle] call _rotatePos;
-//        private _mrkr = createMarkerLocal [_name,_pos];
-//        _mrkr setMarkerBrushLocal _brush;
-//        _mrkr setMarkerColorLocal _color;
-//        _mrkr setMarkerDirLocal _dir;
-//        _mrkr setMarkerShapeLocal _shape;
-//        _mrkr setMarkerSizeLocal _size;
-//        _mrkr setMarkerTypeLocal _type;
-//        _mrkr setMarkerAlpha _alpha;
-//    } count _markerData;
-//    
-//    { _x addCuratorEditableObjects [_cobj, true] } count allCurators;
-//    
+    private _va = [];
+    {
+        _x params ['_type','_relPos','_dir','_groupId'];
+        _pos = [_relPos,_center,_angle] call _rotatePos;
+        _veh = _type createVehicle _spawnPt;
+        _veh setDir (_dir - _angle);
+        _veh setPosATL _pos;
+        _va pushBack _veh;
+        _veh enableSimulationGlobal false;
+    } count _vaData;
+    [_va] remoteExec ["CustomArsenal_AddVAs",0,true];
+    [_va] remoteExec ["ITW_BaseVaActions",0,true];
+    // lamps
+    {
+        _x params ['_type','_relPos','_dir','_groupId'];
+        _pos = [_relPos,_center,_angle] call _rotatePos;
+        _veh = _type createVehicle _spawnPt;
+        _veh allowDamage false;
+        _veh setDir (_dir - _angle);
+        _veh setPosATL _pos;
+    } count _lampData;
+    // repair pt
+    {
+        _x params ['_type','_relPos','_dir','_groupId'];
+        _pos = [_relPos,_center,_angle] call _rotatePos;
+        _elevation = [_pos,_dir - _angle] call ITW_BasePlatformWide;
+        _pos set [2,_elevation];
+        _veh = [_pos,"square",_dir - _angle] call ITW_fnc_HelipadObject;
+        [_pos,25] call ITW_vehRepairPoint;
+        false
+    } count _repairPtData;
+    _baseInfo pushBack _pos; // ITW_BASE_REPAIR_PT
+    // objects
+    {
+        _x params ['_type','_relPos','_dir','_groupId'];
+        _pos = [_relPos,_center,_angle] call _rotatePos;
+        [_type,_pos,_dir - _angle] call ITW_BaseSimpleObject;
+        false
+    } count _objectData;
+    // vehicles
+    _vehSpawnInfo = [];
+    {
+        _x params ['_type','_relPos','_dir','_groupId'];
+        _pos = [_relPos,_center,_angle] call _rotatePos;
+        _dir = _dir - _angle;
+        private _typeStr = if (typeName _type isEqualTo "ARRAY") then {_type#0} else {_type};
+        if (_typeStr isKindOf "Air") then {
+            _elevation = [_pos,_dir] call ITW_BasePlatform;
+            _pos set [2,_elevation];
+            _dir = [[sin _dir, cos _dir, 0], [0,0,1]];
+        };      
+        _vehSpawnInfo pushBack [_type,_pos,_dir,1,true];
+        false
+    } count _vehData;
+    // men
+    {
+        _x params ['_type','_relPos','_dir','_groupId'];
+        private _pos = [_relPos,_center,_angle] call _rotatePos;
+        BASE_UNIT = nil;
+        _type createUnit [_pos, _groupId, "BASE_UNIT = this"];
+        waitUntil {!isNil "BASE_UNIT"};
+        private _unit = BASE_UNIT;
+        BASE_UNIT = nil;
+        _unit setFormDir (_dir - _angle);
+        _unit setDir (_dir - _angle);
+        _unit setPosATL _pos;
+        _unit doMove _pos;
+        _cobj = _cobj + [_unit];
+    } count _menData;
+
+    {
+        _x params ['_groupid','_wpArray'];
+        if (count _wpArray > 1) then {
+            {
+                _x params ['_relPos', '_completeR', '_behavior', '_combatMode', '_formation', '_speed', '_wpType', '_timeout'];
+                private _pos = [_relPos,_center,_angle] call _rotatePos;
+                private _idx = _groupid addWaypoint [_pos,_completeR];
+                _idx setWaypointBehaviour _behavior;
+                _idx setWaypointCombatMode _combatMode;
+                _idx setWaypointFormation _formation;
+                _idx setWaypointSpeed _speed;
+                _idx setWaypointType _wpType;
+                _idx setWaypointTimeout _timeout;
+            } count _wpArray;
+        } else {
+            {doStop _x} count units _groupId;
+        };
+        _groups pushBack _groupid;
+        false
+    } count _wayPointData;
+    // markers
+    {
+        _x params ['_name', '_relPos', '_brush', '_color', '_dir', '_shape', '_size', '_type', '_alpha'];
+        private _pos = [_relPos,_center,_angle] call _rotatePos;
+        private _mrkr = createMarkerLocal [_name,_pos];
+        _mrkr setMarkerBrushLocal _brush;
+        _mrkr setMarkerColorLocal _color;
+        _mrkr setMarkerDirLocal _dir;
+        _mrkr setMarkerShapeLocal _shape;
+        _mrkr setMarkerSizeLocal _size;
+        _mrkr setMarkerTypeLocal _type;
+        _mrkr setMarkerAlpha _alpha;
+    } count _markerData;
+    
+    { _x addCuratorEditableObjects [_cobj, true] } count allCurators;
+    
     // delay the spawning in of vehicles a short amount
-//    _vehSpawnInfo spawn {
-//        scriptName "ITW_VehSpawner";
-//        sleep 5;
-//        {_x call ITW_VehSpawn; false} count _this;
-//    };
-//    _baseInfo pushBack true; // ITW_BASE_SPAWNED
+    _vehSpawnInfo spawn {
+        scriptName "ITW_VehSpawner";
+        sleep 5;
+        {_x call ITW_VehSpawn; false} count _this;
+    };
+    _baseInfo pushBack true; // ITW_BASE_SPAWNED
     
     _baseInfo
 };
